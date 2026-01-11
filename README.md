@@ -1,6 +1,6 @@
 **Python Scaffold-Highlighter**
 
-Subtitle: An HCI-based approach to teaching Python in the Age of AI.
+An HCI-based approach to teaching Python in the Age of AI.
 
 **📌 Overview**
 
