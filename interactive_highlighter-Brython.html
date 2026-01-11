@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Code Block Highlighter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #4ec9b0;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #858585;
+            font-size: 16px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background-color: #252526;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .panel-title {
+            color: #4ec9b0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .btn {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: #1177bb;
+        }
+        
+        .btn-success {
+            background-color: #0e7c0e;
+        }
+        
+        .btn-success:hover {
+            background-color: #119911;
+        }
+        
+        .btn-warning {
+            background-color: #ce9178;
+            color: #000;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d4a183;
+        }
+        
+        #codeInput {
+            width: 100%;
+            min-height: 400px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: 2px solid #3c3c3c;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            tab-size: 4;
+        }
+        
+        #codeInput:focus {
+            outline: none;
+            border-color: #0e639c;
+        }
+        
+        #highlightedOutput {
+            background-color: #1e1e1e;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 400px;
+            overflow-x: auto;
+        }
+        
+        .code-line {
+            padding: 4px 12px;
+            margin: 2px 0;
+            border-radius: 2px;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.6;
+            transition: background-color 0.2s;
+            color: #1e1e1e;
+        }
+        
+        .code-line.empty {
+            background-color: transparent !important;
+            height: 1.6em;
+        }
+        
+        .line-num {
+            color: #858585;
+            margin-right: 16px;
+            user-select: none;
+            display: inline-block;
+            min-width: 30px;
+            text-align: right;
+        }
+        
+        .legend {
+            background-color: #2d2d30;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .legend h3 {
+            color: #4ec9b0;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+            border: 1px solid #555;
+        }
+        
+        .legend-text {
+            color: #cccccc;
+            font-size: 13px;
+        }
+        
+        .examples {
+            margin-top: 15px;
+        }
+        
+        .example-btn {
+            background-color: #3c3c3c;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .example-btn:hover {
+            background-color: #4c4c4c;
+        }
+        
+        #runOutput {
+            background-color: #1e1e1e;
+            border: 2px solid #3c3c3c;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #d4d4d4;
+            font-size: 13px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        
+        .output-line {
+            margin: 2px 0;
+        }
+        
+        .output-error {
+            color: #f48771;
+        }
+        
+        .output-success {
+            color: #4ec9b0;
+        }
+        
+        .info-box {
+            background-color: #1e1e1e;
+            border-left: 4px solid #0e639c;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .info-box p {
+            color: #cccccc;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Interactive Code Block Highlighter</h1>
+            <p class="subtitle">Type code on the left, see it highlighted on the right! Try running it too!</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- Input Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">📝 Your Code</span>
+                    <button class="btn btn-warning" onclick="clearCode()">Clear</button>
+                </div>
+                <textarea id="codeInput" placeholder="Type your Python code here...
+Example:
+for i in range(3):
+    print(i)
+    if i == 2:
+        print('Done!')"></textarea>
+                
+                <div class="examples">
+                    <strong style="color: #858585; font-size: 13px;">Quick Examples:</strong><br>
+                    <button class="btn example-btn" onclick="loadExample(1)">Simple Loop</button>
+                    <button class="btn example-btn" onclick="loadExample(2)">Nested If</button>
+                    <button class="btn example-btn" onclick="loadExample(3)">Function</button>
+                    <button class="btn example-btn" onclick="loadExample(4)">Game Code</button>
+                </div>
+            </div>
+            
+            <!-- Output Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">✨ Highlighted Blocks</span>
+                    <label style="color: #858585; font-size: 13px;">
+                        <input type="checkbox" id="showLines" checked onchange="updateHighlight()"> 
+                        Show line numbers
+                    </label>
+                </div>
+                <div id="highlightedOutput"></div>
+            </div>
+        </div>
+        
+        <!-- Run Code Section -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">▶️ Run Your Code</span>
+                <button class="btn btn-success" onclick="runCode()">Run Code</button>
+            </div>
+            <div class="info-box">
+                <p>⚡ <strong>Note:</strong> This uses Brython to run Python in your browser. Most basic Python works, but some advanced libraries may not be available.</p>
+            </div>
+            <div id="runOutput"><span style="color: #858585;">Click "Run Code" to execute your Python code...</span></div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <h3>🎨 Color Guide - What Each Color Means</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #a8c9a0;"></div>
+                    <div class="legend-text"><strong>Level 0:</strong> Main code</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f4d99b;"></div>
+                    <div class="legend-text"><strong>Level 1:</strong> First indent</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f4b6a4;"></div>
+                    <div class="legend-text"><strong>Level 2:</strong> Second indent</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #d4a5c9;"></div>
+                    <div class="legend-text"><strong>Level 3:</strong> Third indent</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #b5d4e6;"></div>
+                    <div class="legend-text"><strong>Level 4:</strong> Fourth indent</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f4c4d0;"></div>
+                    <div class="legend-text"><strong>Level 5+:</strong> Deep nesting</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Brython for running Python in browser -->
+    <script src="https://cdn.jsdelivr.net/npm/brython@3.12.0/brython.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/brython@3.12.0/brython_stdlib.js"></script>
+    
+    <script>
+        // Color scheme matching the image - soft, friendly colors
+        const COLORS = [
+            '#a8c9a0',  // Soft light green (like the outer block)
+            '#f4d99b',  // Soft yellow/tan (like the middle block)
+            '#f4b6a4',  // Soft peachy pink (like the inner block)
+            '#d4a5c9',  // Soft lavender purple
+            '#b5d4e6',  // Soft sky blue
+            '#f4c4d0',  // Soft rose pink
+        ];
+        
+        // Example code snippets
+        const examples = {
+            1: `for i in range(5):
+    print(f"Number: {i}")
+    if i == 3:
+        print("Found three!")`,
+            
+            2: `x = 10
+if x > 0:
+    print("Positive")
+    if x > 5:
+        print("Greater than 5")
+        if x == 10:
+            print("Exactly 10!")`,
+            
+            3: `def greet(name):
+    if name:
+        print(f"Hello, {name}!")
+        for i in range(3):
+            print("Welcome!")
+    else:
+        print("Hello, stranger!")
+
+greet("World")`,
+            
+            4: `while corn_collects_all == True:
+    if block != 'chickens':
+        move_forward(1)
+        turn_north()
+        move_forward(1)
+        turn_east()`
+        };
+        
+        // Get indentation level of a line
+        function getIndentLevel(line) {
+            if (!line.trim()) return 0;
+            const spaces = line.match(/^(\s*)/)[1].length;
+            return Math.floor(spaces / 4);
+        }
+        
+        // Highlight code with colored blocks
+        function highlightCode(code, showLines = true) {
+            const lines = code.split('\n');
+            let html = '';
+            const maxLineNum = lines.length.toString().length;
+            
+            lines.forEach((line, index) => {
+                if (!line.trim()) {
+                    html += '<div class="code-line empty">&nbsp;</div>';
+                    return;
+                }
+                
+                const indentLevel = getIndentLevel(line);
+                const color = COLORS[indentLevel % COLORS.length];
+                const content = line
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/ /g, '&nbsp;');
+                
+                const lineNum = showLines 
+                    ? `<span class="line-num">${(index + 1).toString().padStart(maxLineNum, ' ')}</span>` 
+                    : '';
+                
+                html += `<div class="code-line level-${indentLevel}" style="background-color: ${color};">${lineNum}${content}</div>`;
+            });
+            
+            return html;
+        }
+        
+        // Update highlighted output
+        function updateHighlight() {
+            const code = document.getElementById('codeInput').value;
+            const showLines = document.getElementById('showLines').checked;
+            const output = document.getElementById('highlightedOutput');
+            
+            if (!code.trim()) {
+                output.innerHTML = '<div style="color: #858585; padding: 10px;">Type some code to see it highlighted...</div>';
+                return;
+            }
+            
+            output.innerHTML = highlightCode(code, showLines);
+        }
+        
+        // Load example code
+        function loadExample(num) {
+            document.getElementById('codeInput').value = examples[num];
+            updateHighlight();
+        }
+        
+        // Clear code
+        function clearCode() {
+            document.getElementById('codeInput').value = '';
+            updateHighlight();
+        }
+        
+        // Run Python code using Brython
+        function runCode() {
+            const code = document.getElementById('codeInput').value;
+            const output = document.getElementById('runOutput');
+            
+            if (!code.trim()) {
+                output.innerHTML = '<span class="output-error">No code to run!</span>';
+                return;
+            }
+            
+            // Clear previous output
+            output.innerHTML = '<span style="color: #858585;">Running...</span>';
+            
+            // Capture console output
+            let capturedOutput = '';
+            
+            // Override print function
+            const printFunc = function(...args) {
+                capturedOutput += args.join(' ') + '\n';
+            };
+            
+            try {
+                // Execute Python code using Brython
+                brython(1);  // Initialize Brython
+                
+                // Create a wrapper to capture output
+                const wrappedCode = `
+import sys
+from browser import document
+
+output_lines = []
+
+def print(*args, **kwargs):
+    output_lines.append(' '.join(str(arg) for arg in args))
+
+${code}
+
+# Store output
+document['runOutput'].innerHTML = '<span class="output-success">✓ Code executed successfully!</span><br><br>' + '<br>'.join(output_lines)
+`;
+                
+                // Execute
+                const script = document.createElement('script');
+                script.type = 'text/python';
+                script.text = wrappedCode;
+                document.body.appendChild(script);
+                
+                // Clean up
+                setTimeout(() => document.body.removeChild(script), 100);
+                
+            } catch (error) {
+                output.innerHTML = `<span class="output-error">❌ Error:</span><br><span class="output-error">${error.message}</span>`;
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('codeInput');
+            
+            // Update highlight as user types
+            textarea.addEventListener('input', updateHighlight);
+            
+            // Handle tab key for indentation
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 4;
+                    updateHighlight();
+                }
+            });
+            
+            // Load first example
+            loadExample(1);
+            
+            // Initialize Brython
+            brython(1);
+        });
+    </script>
+</body>
+</html>
