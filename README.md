@@ -1,5 +1,4 @@
-🚀** Project Title:**\**
-Python Scaffold-Highlighter**
+**Python Scaffold-Highlighter**
 
 Subtitle: An HCI-based approach to teaching Python in the Age of AI.
 
